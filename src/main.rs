@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::io::Result;
 use std::ffi::OsStr;
+use std::process::ExitStatus;
 
 use tokio::process::Command;
 use tokio::sync::mpsc::{self, Receiver};
@@ -35,6 +36,11 @@ async fn main() {
     if let Some(device) = enumerator.scan_devices().unwrap().next() {
         let path = device.syspath().to_string_lossy().to_string();
         tx.send(Event::Add(path)).await.unwrap();
+    } else if let Some(status) = change_setting(true, false).await {
+        match status {
+            Ok(status) => println!("non-success exit: {:?}", status.code()),
+            Err(err) =>   println!("error with dconf: {}", err),
+        }
     }
 
     // And now finally just keep waiting for events
@@ -74,8 +80,19 @@ async fn management_thread(mut rx: Receiver<Event>) {
             Event::Remove(path) => devices.remove(&path),
         };
 
-        let mut child = match (was_empty, devices.is_empty()) {
-            (true, true) | (false, false)  => continue, 
+        let exit_code = change_setting(was_empty, devices.is_empty()).await;
+        if let Some(status) = exit_code {
+            match status {
+                Ok(status) => println!("non-success exit: {:?}", status.code()),
+                Err(err) =>   println!("error with dconf: {}", err),
+            }
+        }
+    }
+}
+
+async fn change_setting(was_empty: bool, is_empty: bool) -> Option<Result<ExitStatus>> {
+        let mut child = match (was_empty, is_empty) {
+            (true, true) | (false, false)  => return None,
             (true, false) => {
                 Command::new("dconf")
                     .arg("write")
@@ -95,15 +112,10 @@ async fn management_thread(mut rx: Receiver<Event>) {
         };
 
         match child.wait().await {
-            Ok(status) if status.success() => continue,
-            Ok(status) => {
-                println!("non-success exit: {:?}", status.code());
-            }
-            Err(err) => {
-                println!("error with dconf: {}", err);
-            }
+            Ok(status) if status.success() => None,
+            Ok(status) => Some(Ok(status)),
+            Err(err) => Some(Err(err)),
         }
-    }
 }
 
 // Returns an enumerator that just looks for ErgoDox EZ Glow
