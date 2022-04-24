@@ -1,6 +1,6 @@
 use std::collections::HashSet;
-use std::io::Result;
 use std::ffi::OsStr;
+use std::io::Result;
 use std::process::ExitStatus;
 
 use tokio::process::Command;
@@ -39,7 +39,7 @@ async fn main() {
     } else if let Some(status) = change_setting(true, false).await {
         match status {
             Ok(status) => println!("non-success exit: {:?}", status.code()),
-            Err(err) =>   println!("error with dconf: {}", err),
+            Err(err) => println!("error with dconf: {}", err),
         }
     }
 
@@ -52,7 +52,7 @@ async fn main() {
         if action == Some(OsStr::new("unbind")) {
             let path = device.syspath().to_string_lossy().to_string();
             tx.send(Event::Remove(path)).await.unwrap();
-            continue
+            continue;
         }
 
         if action != Some(OsStr::new("bind")) {
@@ -84,38 +84,34 @@ async fn management_thread(mut rx: Receiver<Event>) {
         if let Some(status) = exit_code {
             match status {
                 Ok(status) => println!("non-success exit: {:?}", status.code()),
-                Err(err) =>   println!("error with dconf: {}", err),
+                Err(err) => println!("error with dconf: {}", err),
             }
         }
     }
 }
 
 async fn change_setting(was_empty: bool, is_empty: bool) -> Option<Result<ExitStatus>> {
-        let mut child = match (was_empty, is_empty) {
-            (true, true) | (false, false)  => return None,
-            (true, false) => {
-                Command::new("dconf")
-                    .arg("write")
-                    .arg("/org/gnome/desktop/input-sources/xkb-options")
-                    .arg("@as []")
-                    .spawn()
-                    .expect("failed to spawn reset")
-            },
-            (false, true) => {
-                Command::new("dconf")
-                    .arg("write")
-                    .arg("/org/gnome/desktop/input-sources/xkb-options")
-                    .arg("['ctrl:swapcaps']")
-                    .spawn()
-                    .expect("failed to spawn set")
-            }
-        };
+    let mut child = match (was_empty, is_empty) {
+        (true, true) | (false, false) => return None,
+        (true, false) => Command::new("dconf")
+            .arg("write")
+            .arg("/org/gnome/desktop/input-sources/xkb-options")
+            .arg("@as []")
+            .spawn()
+            .expect("failed to spawn reset"),
+        (false, true) => Command::new("dconf")
+            .arg("write")
+            .arg("/org/gnome/desktop/input-sources/xkb-options")
+            .arg("['ctrl:swapcaps']")
+            .spawn()
+            .expect("failed to spawn set"),
+    };
 
-        match child.wait().await {
-            Ok(status) if status.success() => None,
-            Ok(status) => Some(Ok(status)),
-            Err(err) => Some(Err(err)),
-        }
+    match child.wait().await {
+        Ok(status) if status.success() => None,
+        Ok(status) => Some(Ok(status)),
+        Err(err) => Some(Err(err)),
+    }
 }
 
 // Returns an enumerator that just looks for ErgoDox EZ Glow
@@ -123,7 +119,7 @@ fn ergodox_enumerator() -> Result<Enumerator> {
     let mut enumerator = Enumerator::new()?;
     enumerator.match_subsystem("usb")?;
     enumerator.match_attribute("idVendor", "3297")?;
-    enumerator.match_attribute("idProduct", "4976")?;    
+    enumerator.match_attribute("idProduct", "4976")?;
 
     Ok(enumerator)
 }
