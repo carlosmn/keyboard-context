@@ -36,7 +36,7 @@ async fn main() {
     if let Some(device) = enumerator.scan_devices().unwrap().next() {
         let path = device.syspath().to_string_lossy().to_string();
         tx.send(Event::Add(path)).await.unwrap();
-    } else if let Some(status) = change_setting(true, false).await {
+    } else if let Some(status) = change_setting(false, true).await {
         match status {
             Ok(status) => println!("non-success exit: {:?}", status.code()),
             Err(err) => println!("error with dconf: {}", err),
