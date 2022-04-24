@@ -1,0 +1,9 @@
+[Unit]
+Description=Running keyboard-context
+
+[Service]
+Type=exec
+ExecStart=%h/bin/keyboard-context
+
+[Install]
+WantedBy=default.target
