@@ -96,13 +96,13 @@ async fn change_setting(was_empty: bool, is_empty: bool) -> Option<Result<ExitSt
         (true, false) => Command::new("dconf")
             .arg("write")
             .arg("/org/gnome/desktop/input-sources/xkb-options")
-            .arg("@as []")
+            .arg("['grp:shifts_toggle']")
             .spawn()
             .expect("failed to spawn reset"),
         (false, true) => Command::new("dconf")
             .arg("write")
             .arg("/org/gnome/desktop/input-sources/xkb-options")
-            .arg("['ctrl:swapcaps']")
+            .arg("['ctrl:swapcaps','grp:shifts_toggle']")
             .spawn()
             .expect("failed to spawn set"),
     };
